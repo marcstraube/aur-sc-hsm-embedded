@@ -1,0 +1,5 @@
+sc-hsm-embedded/
+src/
+pkg/
+*.pkg.tar.*
+*.log

@@ -1,41 +1,39 @@
-# Maintainer : Remy van Elst
-# https://raymii.org
-
+# Maintainer: Marc Straube <email@marcstraube.de>
 pkgname=sc-hsm-embedded-git
-pkgver=2.9
+pkgver=2.12.r17.g99eb391
 pkgrel=1
-pkgdesc="sc-hsm-embedded pkcs#11 library by CardContact"
-arch=('any')
+pkgdesc="Light-weight PKCS#11 module for SmartCard-HSM / Nitrokey HSM"
+arch=('x86_64')
 url="https://github.com/CardContact/sc-hsm-embedded"
-license=('bsd')
+license=('BSD-3-Clause')
+depends=('pcsclite' 'openssl')
+makedepends=('git' 'autoconf' 'automake' 'libtool')
+provides=('sc-hsm-embedded' 'libsc-hsm-pkcs11.so')
+conflicts=('sc-hsm-embedded')
+source=('git+https://github.com/CardContact/sc-hsm-embedded.git'
+        'fix-c23-keywords.patch')
+sha256sums=('SKIP'
+            'SKIP')
 
-depends=('automake' 'libtool' 'libusb' 'pcsclite')
-makedepends=('git')
-provides=("${pkgname%-VCS}")
-conflicts=("${pkgname%-VCS}")
-replaces=()
-backup=()
-options=()
-install=
-source=('sc-hsm-embedded::git+https://github.com/CardContact/sc-hsm-embedded')
-noextract=()
-md5sums=('SKIP')
+pkgver() {
+  cd sc-hsm-embedded
+  git describe --long --tags | sed 's/^V//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
 
 prepare() {
-  cd "$srcdir/${pkgname%-git}"
-  libtoolize --force
-  aclocal
-  automake --force-missing --add-missing
-  autoconf
+  cd sc-hsm-embedded
+  patch -Np1 -i "$srcdir/fix-c23-keywords.patch"
 }
 
 build() {
-  cd "$srcdir/${pkgname%-git}"
+  cd sc-hsm-embedded
+  autoreconf -fi
   ./configure --prefix=/usr
   make
 }
 
 package() {
-  cd "$srcdir/${pkgname%-git}"
-  make DESTDIR="$pkgdir/" install
+  cd sc-hsm-embedded
+  make DESTDIR="$pkgdir" install
+  install -Dm644 COPYING "$pkgdir/usr/share/licenses/$pkgname/COPYING"
 }
