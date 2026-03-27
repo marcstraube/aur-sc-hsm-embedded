@@ -1,0 +1,69 @@
+name: Build Package
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Setup pacman and base-devel
+        run: |
+          pacman-key --init
+          pacman-key --populate archlinux
+          pacman -Syu --noconfirm base-devel git github-cli
+
+      - name: Create build user
+        run: |
+          useradd -m builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build package
+        run: |
+          chown -R builder:builder .
+          su builder -c 'makepkg -s --noconfirm'
+
+      - name: Get package info
+        id: pkginfo
+        run: |
+          pkg=$(ls sc-hsm-embedded-git-*.pkg.tar.zst | grep -v debug | head -1)
+          echo "pkg=$pkg" >> "$GITHUB_OUTPUT"
+          ver=$(echo "$pkg" | sed 's/sc-hsm-embedded-git-//;s/-x86_64.pkg.tar.zst//')
+          echo "ver=$ver" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sc-hsm-embedded-git
+          path: "sc-hsm-embedded-git-*.pkg.tar.zst"
+          if-no-files-found: error
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          gh release delete latest --yes 2>/dev/null || true
+          git push origin :refs/tags/latest 2>/dev/null || true
+
+          gh release create latest \
+            --title "sc-hsm-embedded-git ${{ steps.pkginfo.outputs.ver }}" \
+            --notes "Automated build from \`master\` branch.
+
+          Install:
+          \`\`\`
+          pacman -U ${{ steps.pkginfo.outputs.pkg }}
+          \`\`\`" \
+            --latest \
+            "${{ steps.pkginfo.outputs.pkg }}"
