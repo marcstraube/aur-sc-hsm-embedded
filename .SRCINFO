@@ -1,6 +1,6 @@
 pkgbase = sc-hsm-embedded-git
 	pkgdesc = Light-weight PKCS#11 module for SmartCard-HSM / Nitrokey HSM
-	pkgver = 2.12.r17.g99eb391
+	pkgver = 2.12.r31.gce56d4d
 	pkgrel = 1
 	url = https://github.com/CardContact/sc-hsm-embedded
 	arch = x86_64
@@ -15,8 +15,6 @@ pkgbase = sc-hsm-embedded-git
 	provides = libsc-hsm-pkcs11.so
 	conflicts = sc-hsm-embedded
 	source = git+https://github.com/CardContact/sc-hsm-embedded.git
-	source = fix-c23-keywords.patch
-	sha256sums = SKIP
 	sha256sums = SKIP
 
 pkgname = sc-hsm-embedded-git
